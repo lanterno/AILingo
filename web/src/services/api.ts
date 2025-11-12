@@ -54,11 +54,8 @@ export const chartApi = {
 
   async evaluateSolution(
     question: string,
-    dataset: ChartPoint[],
     studentSolution: ChartPoint[],
-    correctAnswer: QuestionData['correctAnswer'],
-    xAxisLabel: string,
-    yAxisLabel: string
+    correctAnswer: QuestionData['correctAnswer']
   ): Promise<EvaluationResult> {
     const response = await fetch(`${API_BASE_URL}/api/charts/evaluate/`, {
       method: 'POST',
@@ -67,11 +64,8 @@ export const chartApi = {
       },
       body: JSON.stringify({
         question,
-        dataset,
         studentSolution,
         correctAnswer,
-        xAxisLabel,
-        yAxisLabel,
       }),
     });
     if (!response.ok) {

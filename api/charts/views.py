@@ -1,6 +1,7 @@
-from rest_framework import viewsets, status
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+
 from .ai_tutor import AITutor
 
 # Initialize AI Tutor instance
@@ -20,7 +21,7 @@ class ChartViewSet(viewsets.ViewSet):
         except Exception as e:
             return Response(
                 {"error": f"Failed to generate question: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
     @action(detail=False, methods=["post"], url_path="evaluate")
@@ -32,20 +33,17 @@ class ChartViewSet(viewsets.ViewSet):
             correct_answer = request.data.get("correctAnswer", {})
 
             evaluation_result = ai_tutor.evaluate_solution(
-                question=question,
-                student_solution=student_solution,
-                correct_answer=correct_answer
+                question=question, student_solution=student_solution, correct_answer=correct_answer
             )
 
             return Response(evaluation_result, status=status.HTTP_200_OK)
 
         except ValueError as e:
             return Response(
-                {"correct": False, "feedback": str(e)},
-                status=status.HTTP_400_BAD_REQUEST
+                {"correct": False, "feedback": str(e)}, status=status.HTTP_400_BAD_REQUEST
             )
         except Exception as e:
             return Response(
                 {"error": f"Failed to evaluate solution: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )

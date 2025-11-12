@@ -1,26 +1,18 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   Chart as ChartJS,
-  CategoryScale,
   LinearScale,
   PointElement,
-  LineElement,
   Tooltip,
-  Legend,
-  Filler,
 } from 'chart.js';
 import { Bubble } from 'react-chartjs-2';
 import dragDataPlugin from 'chartjs-plugin-dragdata';
 import { chartApi, ChartPoint, QuestionData, EvaluationResult } from '../services/api';
 
 ChartJS.register(
-  CategoryScale,
   LinearScale,
   PointElement,
-  LineElement,
   Tooltip,
-  Legend,
-  Filler,
   dragDataPlugin
 );
 
@@ -105,11 +97,8 @@ const BubbleChart: React.FC = () => {
       setError(null);
       const result = await chartApi.evaluateSolution(
         questionData.question,
-        questionData.dataset,
         points,
-        questionData.correctAnswer,
-        questionData.xAxisLabel,
-        questionData.yAxisLabel
+        questionData.correctAnswer
       );
       
       setEvaluation(result);
