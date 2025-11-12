@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.14-slim
 
 WORKDIR /app
 
@@ -18,7 +18,7 @@ COPY . .
 EXPOSE 8000
 
 # Note: OPENAI_API_KEY must be provided as an environment variable at runtime
-# Example: docker run -e OPENAI_API_KEY=your-key schole-api
+# Example: docker run -e OPENAI_API_KEY=your-key ailingo-api
 
-# Start server
-CMD python manage.py runserver 0.0.0.0:8000
+# Start server with Uvicorn
+CMD ["uvicorn", "config.asgi:application", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]

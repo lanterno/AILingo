@@ -1,14 +1,15 @@
 [project]
-name = "schole-api"
+name = "ailingo-api"
 version = "0.1.0"
-description = "Scholé Bubble Chart API"
-requires-python = ">=3.11"
+description = "AILingo API"
+requires-python = ">=3.14"
 dependencies = [
     "django>=5.0",
     "djangorestframework>=3.14",
     "django-cors-headers>=4.3",
     "drf-spectacular>=0.27",
     "openai>=1.0",
+    "uvicorn[standard]>=0.30.0",
 ]
 
 [build-system]
@@ -20,7 +21,7 @@ packages = ["api"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py314"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP"]
