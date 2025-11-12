@@ -15,4 +15,4 @@ EXPOSE 8000
 # Note: OPENAI_API_KEY must be provided as an environment variable at runtime
 # Example: docker run -e OPENAI_API_KEY=your-key ailingo-api
 
-CMD ["uvicorn", "config.asgi:application", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
+CMD sh -c "uvicorn config.asgi:application --host 0.0.0.0 --port ${PORT:-8000} --workers 2"
