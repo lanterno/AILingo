@@ -9,6 +9,14 @@ terraform {
       source  = "hashicorp/google-beta"
       version = "~> 6.0"
     }
+    time = {
+      source  = "hashicorp/time"
+      version = "~> 0.9"
+    }
+    null = {
+      source  = "hashicorp/null"
+      version = "~> 3.2"
+    }
   }
 }
 
@@ -22,15 +30,79 @@ provider "google-beta" {
   region  = var.region
 }
 
+# Enable required APIs
+resource "google_project_service" "cloudrun" {
+  project            = var.project_id
+  service            = "run.googleapis.com"
+  disable_on_destroy = false
+}
+
+resource "google_project_service" "artifactregistry" {
+  project            = var.project_id
+  service            = "artifactregistry.googleapis.com"
+  disable_on_destroy = false
+}
+
+# Create Artifact Registry repository for Docker images
+resource "google_artifact_registry_repository" "docker_repo" {
+  location      = var.region
+  repository_id = "ailingo-api"
+  description   = "Docker repository for ailingo-api"
+  format        = "DOCKER"
+  depends_on    = [google_project_service.artifactregistry]
+}
+
+# Wait for APIs to propagate
+resource "time_sleep" "wait_for_apis" {
+  depends_on = [google_project_service.cloudrun, google_project_service.artifactregistry]
+  create_duration = "60s"
+}
+
+# Copy image from ghcr.io to Artifact Registry
+resource "null_resource" "copy_image" {
+  provisioner "local-exec" {
+    command = <<-EOT
+      # Extract image details
+      SOURCE_IMAGE="${var.api_image}"
+      TARGET_IMAGE="${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.docker_repo.repository_id}/ailingo-api:latest"
+      
+      # Check if local image exists, otherwise pull from ghcr.io
+      if docker image inspect "$SOURCE_IMAGE" >/dev/null 2>&1; then
+        echo "Using local image: $SOURCE_IMAGE"
+      else
+        echo "Pulling image from registry: $SOURCE_IMAGE"
+        docker pull "$SOURCE_IMAGE" || (echo "Warning: docker pull failed, trying to use local image if available" && docker image inspect "$SOURCE_IMAGE" >/dev/null 2>&1 || exit 1)
+      fi
+      
+      docker tag "$SOURCE_IMAGE" "$TARGET_IMAGE"
+      gcloud auth configure-docker ${var.region}-docker.pkg.dev --quiet
+      docker push "$TARGET_IMAGE" || (echo "Error: docker push failed" && exit 1)
+    EOT
+  }
+  depends_on = [google_artifact_registry_repository.docker_repo, time_sleep.wait_for_apis]
+  triggers = {
+    api_image = var.api_image
+    repository = google_artifact_registry_repository.docker_repo.id
+  }
+}
+
+# Wait for Cloud Run API to propagate
+resource "time_sleep" "wait_for_cloudrun_api" {
+  depends_on = [time_sleep.wait_for_apis]
+  create_duration = "60s"
+}
+
 # Cloud Run service for API
 resource "google_cloud_run_service" "api" {
   name     = "ailingo-api"
   location = var.region
 
+  depends_on = [time_sleep.wait_for_cloudrun_api, null_resource.copy_image]
+
   template {
     spec {
       containers {
-        image = var.api_image
+        image = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.docker_repo.repository_id}/ailingo-api:latest"
 
         env {
           name  = "SECRET_KEY"
@@ -80,6 +152,7 @@ resource "google_cloud_run_service_iam_member" "api_public" {
   location = google_cloud_run_service.api.location
   role     = "roles/run.invoker"
   member   = "allUsers"
+  depends_on = [google_cloud_run_service.api]
 }
 
 
