@@ -1,0 +1,97 @@
+name: Web CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'web/**'
+      - '.github/workflows/web.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'web/**'
+      - '.github/workflows/web.yml'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        working-directory: ./web
+        run: bun install --frozen-lockfile
+
+      - name: Run type check
+        working-directory: ./web
+        run: bun run --bun tsc --noEmit
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [lint]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        working-directory: ./web
+        run: bun install --frozen-lockfile
+
+      - name: Build application
+        working-directory: ./web
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL || 'http://localhost:8000' }}
+        run: bun run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: web/dist
+          retention-days: 7
+
+  build-docker:
+    runs-on: ubuntu-latest
+    needs: [lint]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub (optional)
+        if: ${{ secrets.DOCKER_USERNAME != '' }}
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build Docker image
+        working-directory: ./web
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL || 'http://localhost:8000' }}
+        run: |
+          docker build -t schole-web:${{ github.sha }} .
+          docker build -t schole-web:latest .
+
+      - name: Push Docker image (optional)
+        if: ${{ secrets.DOCKER_USERNAME != '' }}
+        run: |
+          docker tag schole-web:${{ github.sha }} ${{ secrets.DOCKER_USERNAME }}/schole-web:${{ github.sha }}
+          docker tag schole-web:latest ${{ secrets.DOCKER_USERNAME }}/schole-web:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/schole-web:${{ github.sha }}
+          docker push ${{ secrets.DOCKER_USERNAME }}/schole-web:latest
+

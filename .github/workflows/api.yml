@@ -1,0 +1,79 @@
+name: API CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'api/**'
+      - '.github/workflows/api.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'api/**'
+      - '.github/workflows/api.yml'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        working-directory: ./api
+        run: |
+          uv pip install -e .
+
+      - name: Run ruff check
+        working-directory: ./api
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          uv run ruff check .
+
+      - name: Run ruff format check
+        working-directory: ./api
+        run: |
+          uv run ruff format --check .
+
+  build-docker:
+    runs-on: ubuntu-latest
+    needs: [lint]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub (optional)
+        if: ${{ secrets.DOCKER_USERNAME != '' }}
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build Docker image
+        working-directory: ./api
+        run: |
+          docker build -t schole-api:${{ github.sha }} .
+          docker build -t schole-api:latest .
+
+      - name: Push Docker image (optional)
+        if: ${{ secrets.DOCKER_USERNAME != '' }}
+        run: |
+          docker tag schole-api:${{ github.sha }} ${{ secrets.DOCKER_USERNAME }}/schole-api:${{ github.sha }}
+          docker tag schole-api:latest ${{ secrets.DOCKER_USERNAME }}/schole-api:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/schole-api:${{ github.sha }}
+          docker push ${{ secrets.DOCKER_USERNAME }}/schole-api:latest

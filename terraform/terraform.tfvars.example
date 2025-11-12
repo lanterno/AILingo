@@ -1,0 +1,11 @@
+# Example terraform.tfvars
+# Copy this file and fill in your values
+
+project_id  = "your-gcp-project-id"
+region      = "us-central1"
+secret_key  = "your-django-secret-key"
+
+# After building and pushing images:
+# api_image = "gcr.io/your-project-id/schole-api:latest"
+# web_image = "gcr.io/your-project-id/schole-web:latest"
+
