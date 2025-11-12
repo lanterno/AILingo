@@ -4,7 +4,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-dev-key-change-in-production")
-DEBUG = os.environ.get("DEBUG", "1") == "1"
+DEBUG = bool(os.environ.get("DEBUG", "true"))
 
 ALLOWED_HOSTS = ["*"]
 
@@ -96,17 +96,7 @@ SPECTACULAR_SETTINGS = {
     "SERVE_INCLUDE_SCHEMA": False,
 }
 
-# CORS configuration
-if os.environ.get("DEBUG", "0") == "0":
-    # Production: Allow all origins
-    CORS_ALLOW_ALL_ORIGINS = True
-else:
-    # Development: Only allow localhost
-    CORS_ALLOWED_ORIGINS = [
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:5173",
-    ]
 
+# CORS configuration - Allow everything for now!
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True

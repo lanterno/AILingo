@@ -21,11 +21,13 @@ jobs:
         with:
           python-version: '3.14'
       - name: Install Dependencies
+        working-directory: ./api
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
           uv sync --locked
 
       - name: Run Lint
+        working-directory: ./api
         run: uvx ruff check
   
   build-and-publish-docker-image:
@@ -48,6 +50,6 @@ jobs:
         id: docker_build
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./api
           push: true
           tags: ghcr.io/lanterno/ailingo-api:latest
