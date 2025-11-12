@@ -1,10 +1,18 @@
-import os
 from pathlib import Path
+
+import environ
+
+env = environ.Env(
+    DEBUG=(bool, False),
+)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-dev-key-change-in-production")
-DEBUG = bool(os.environ.get("DEBUG", "true"))
+# Take environment variables from .env file
+environ.Env.read_env(BASE_DIR / ".env")
+
+SECRET_KEY = env("SECRET_KEY", default="django-insecure-dev-key-change-in-production")
+DEBUG = env("DEBUG")
 
 ALLOWED_HOSTS = ["*"]
 
