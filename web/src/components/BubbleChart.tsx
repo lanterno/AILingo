@@ -78,7 +78,7 @@ const BubbleChart: React.FC = () => {
   }, [loadQuestion]);
 
   const handleDragEnd = useCallback(
-    async (event: any, datasetIndex: number, index: number, value: any) => {
+    (_event: any, _datasetIndex: number, index: number, value: any) => {
       // Update local state immediately for smooth dragging
       setPoints((prev) =>
         prev.map((p, idx) =>
