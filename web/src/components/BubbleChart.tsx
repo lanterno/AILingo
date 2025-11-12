@@ -16,7 +16,7 @@ ChartJS.register(
   dragDataPlugin
 );
 
-const STORAGE_KEY = 'schole-question-data';
+const STORAGE_KEY = 'ailingo-question-data';
 
 const BubbleChart: React.FC = () => {
   const [questionData, setQuestionData] = useState<QuestionData | null>(null);
@@ -229,7 +229,7 @@ const BubbleChart: React.FC = () => {
       )}
       <div style={styles.card}>
         <div style={styles.header}>
-          <h1 style={styles.title}>Scholé Bubble Chart</h1>
+          <h1 style={styles.title}>AILingo AI Tutor</h1>
           <button onClick={generateNewQuestion} style={styles.refreshButton}>
             🔄 New Question
           </button>
