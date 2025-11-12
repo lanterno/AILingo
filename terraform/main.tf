@@ -3,7 +3,11 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = "~> 5.0"
+      version = "~> 6.0"
+    }
+    google-beta = {
+      source  = "hashicorp/google-beta"
+      version = "~> 6.0"
     }
   }
 }
@@ -13,9 +17,14 @@ provider "google" {
   region  = var.region
 }
 
+provider "google-beta" {
+  project = var.project_id
+  region  = var.region
+}
+
 # Cloud Run service for API
 resource "google_cloud_run_service" "api" {
-  name     = "schole-api"
+  name     = "ailingo-api"
   location = var.region
 
   template {
@@ -49,35 +58,20 @@ resource "google_cloud_run_service" "api" {
   }
 }
 
-# Cloud Run service for Web
-resource "google_cloud_run_service" "web" {
-  name     = "schole-web"
-  location = var.region
+# Enable Firebase Hosting API
+resource "google_project_service" "firebasehosting" {
+  provider           = google-beta
+  project            = var.project_id
+  service            = "firebasehosting.googleapis.com"
+  disable_on_destroy = false
+}
 
-  template {
-    spec {
-      containers {
-        image = var.web_image
-
-        env {
-          name  = "VITE_API_URL"
-          value = google_cloud_run_service.api.status[0].url
-        }
-
-        resources {
-          limits = {
-            cpu    = "1000m"
-            memory = "512Mi"
-          }
-        }
-      }
-    }
-  }
-
-  traffic {
-    percent         = 100
-    latest_revision = true
-  }
+# Firebase Hosting site
+resource "google_firebase_hosting_site" "web" {
+  provider  = google-beta
+  project   = var.project_id
+  site_id   = "${var.project_id}-ailingo-web"
+  depends_on = [google_project_service.firebasehosting]
 }
 
 # IAM policy to allow unauthenticated access
@@ -88,12 +82,6 @@ resource "google_cloud_run_service_iam_member" "api_public" {
   member   = "allUsers"
 }
 
-resource "google_cloud_run_service_iam_member" "web_public" {
-  service  = google_cloud_run_service.web.name
-  location = google_cloud_run_service.web.location
-  role     = "roles/run.invoker"
-  member   = "allUsers"
-}
 
 # Outputs
 output "api_url" {
@@ -101,6 +89,10 @@ output "api_url" {
 }
 
 output "web_url" {
-  value = google_cloud_run_service.web.status[0].url
+  value = "https://${google_firebase_hosting_site.web.site_id}.web.app"
+}
+
+output "web_site_id" {
+  value = google_firebase_hosting_site.web.site_id
 }
 

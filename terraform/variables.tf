@@ -16,14 +16,8 @@ variable "secret_key" {
 }
 
 variable "api_image" {
-  description = "Container image for API service"
+  description = "Container image for API service (supports gcr.io, ghcr.io, docker.io, or any container registry). For GitHub Packages, use format: ghcr.io/OWNER/REPO:TAG"
   type        = string
-  default     = "gcr.io/PROJECT_ID/schole-api:latest"
-}
-
-variable "web_image" {
-  description = "Container image for Web service"
-  type        = string
-  default     = "gcr.io/PROJECT_ID/schole-web:latest"
+  default     = "ghcr.io/USERNAME/ailingo-api:latest"
 }
 

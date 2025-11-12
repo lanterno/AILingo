@@ -1,11 +1,13 @@
 # Example terraform.tfvars
 # Copy this file and fill in your values
 
-project_id  = "your-gcp-project-id"
+project_id  = "ailingo-478020"
 region      = "us-central1"
-secret_key  = "your-django-secret-key"
+secret_key  = "!@#DFGDFG#$%$#%#$%HFGDH$%^"
 
-# After building and pushing images:
-# api_image = "gcr.io/your-project-id/schole-api:latest"
-# web_image = "gcr.io/your-project-id/schole-web:latest"
+# After building and pushing API image:
+# For Google Container Registry:
+# api_image = "gcr.io/your-project-id/ailingo-api:latest"
+# For GitHub Container Registry (ghcr.io):
+# api_image = "ghcr.io/your-username/ailingo-api:latest"
 
