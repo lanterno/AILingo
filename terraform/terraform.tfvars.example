@@ -2,12 +2,10 @@
 # Copy this file and fill in your values
 
 project_id  = "ailingo-478020"
-region      = "us-central1"
+region      = "europe-west1"
 secret_key  = "!@#DFGDFG#$%$#%#$%HFGDH$%^"
 
-# After building and pushing API image:
-# For Google Container Registry:
-# api_image = "gcr.io/your-project-id/ailingo-api:latest"
-# For GitHub Container Registry (ghcr.io):
-# api_image = "ghcr.io/your-username/ailingo-api:latest"
-
+# After building and pushing API image to Artifact Registry via GitHub Actions:
+# The image will be automatically pushed to: REGION-docker.pkg.dev/PROJECT_ID/ailingo-api/ailingo-api:latest
+# You can optionally specify a different image or tag:
+# api_image = "europe-west1-docker.pkg.dev/your-project-id/ailingo-api/ailingo-api:latest"

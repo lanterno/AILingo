@@ -16,9 +16,9 @@ variable "secret_key" {
 }
 
 variable "api_image" {
-  description = "Container image for API service (supports gcr.io, ghcr.io, docker.io, or any container registry). For GitHub Packages, use format: ghcr.io/OWNER/REPO:TAG"
+  description = "Container image for API service in Google Artifact Registry. Format: REGION-docker.pkg.dev/PROJECT_ID/REPOSITORY/IMAGE:TAG"
   type        = string
-  default     = "ghcr.io/USERNAME/ailingo-api:latest"
+  default     = ""
 }
 
 variable "openai_api_key" {

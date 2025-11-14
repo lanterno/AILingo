@@ -8,9 +8,12 @@ on:
       - '.github/workflows/api.yml'
 
 permissions:
-  id-token: write
   contents: read
-  packages: write
+
+env:
+  GCP_PROJECT_ID: ailingo-478020
+  GCP_REGION: europe-west1
+  IMAGE_NAME: europe-west1-docker.pkg.dev/ailingo-478020/ailingo-api/ailingo-api
 
 jobs:
   lint:
@@ -20,37 +23,36 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.14'
-      - name: Install Dependencies
+      - name: Install dependencies and lint
         working-directory: ./api
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
           uv sync --locked
+          uvx ruff check
 
-      - name: Run Lint
-        working-directory: ./api
-        run: uvx ruff check
-  
-  build-and-publish-docker-image:
+  build-and-publish:
     needs: [lint]
     runs-on: ubuntu-latest
-    outputs:
-      digest: ${{ steps.docker_build.outputs.digest }}
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-      - name: "Set up Docker Buildx"
-        uses: docker/setup-buildx-action@v3
-      - name: "Log in to the Container registry"
-        uses: docker/login-action@v3
+      - uses: actions/checkout@v5
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: "Build and push Docker image"
-        id: docker_build
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+      - name: Login to Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev --quiet
+      - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: ./api
           push: true
-          tags: ghcr.io/lanterno/ailingo-api:latest
+          tags: |
+            ${{ env.IMAGE_NAME }}:latest
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.IMAGE_NAME }}:buildcache
+          cache-to: type=registry,ref=${{ env.IMAGE_NAME }}:buildcache,mode=max

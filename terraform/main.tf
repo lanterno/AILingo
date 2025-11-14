@@ -58,34 +58,6 @@ resource "time_sleep" "wait_for_apis" {
   create_duration = "60s"
 }
 
-# Copy image from ghcr.io to Artifact Registry
-resource "null_resource" "copy_image" {
-  provisioner "local-exec" {
-    command = <<-EOT
-      # Extract image details
-      SOURCE_IMAGE="${var.api_image}"
-      TARGET_IMAGE="${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.docker_repo.repository_id}/ailingo-api:latest"
-      
-      # Check if local image exists, otherwise pull from ghcr.io
-      if docker image inspect "$SOURCE_IMAGE" >/dev/null 2>&1; then
-        echo "Using local image: $SOURCE_IMAGE"
-      else
-        echo "Pulling image from registry: $SOURCE_IMAGE"
-        docker pull "$SOURCE_IMAGE" || (echo "Warning: docker pull failed, trying to use local image if available" && docker image inspect "$SOURCE_IMAGE" >/dev/null 2>&1 || exit 1)
-      fi
-      
-      docker tag "$SOURCE_IMAGE" "$TARGET_IMAGE"
-      gcloud auth configure-docker ${var.region}-docker.pkg.dev --quiet
-      docker push "$TARGET_IMAGE" || (echo "Error: docker push failed" && exit 1)
-    EOT
-  }
-  depends_on = [google_artifact_registry_repository.docker_repo, time_sleep.wait_for_apis]
-  triggers = {
-    api_image = var.api_image
-    repository = google_artifact_registry_repository.docker_repo.id
-  }
-}
-
 # Wait for Cloud Run API to propagate
 resource "time_sleep" "wait_for_cloudrun_api" {
   depends_on = [time_sleep.wait_for_apis]
@@ -97,12 +69,12 @@ resource "google_cloud_run_service" "api" {
   name     = "ailingo-api"
   location = var.region
 
-  depends_on = [time_sleep.wait_for_cloudrun_api, null_resource.copy_image]
+  depends_on = [time_sleep.wait_for_cloudrun_api, google_artifact_registry_repository.docker_repo]
 
   template {
     spec {
       containers {
-        image = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.docker_repo.repository_id}/ailingo-api:latest"
+        image = var.api_image != "" ? var.api_image : "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.docker_repo.repository_id}/ailingo-api:latest"
 
         env {
           name  = "SECRET_KEY"
