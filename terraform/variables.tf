@@ -21,3 +21,9 @@ variable "api_image" {
   default     = "ghcr.io/USERNAME/ailingo-api:latest"
 }
 
+variable "openai_api_key" {
+  description = "OpenAI API key for the API service"
+  type        = string
+  sensitive   = true
+}
+

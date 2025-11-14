@@ -114,6 +114,11 @@ resource "google_cloud_run_service" "api" {
           value = "0"
         }
 
+        env {
+          name  = "OPENAI_API_KEY"
+          value = var.openai_api_key
+        }
+
         resources {
           limits = {
             cpu    = "1000m"
