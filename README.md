@@ -2,7 +2,10 @@
 
 A full-stack application with a Django REST API backend and a react frontend.
 
-This application is a simple example of how AI can be used to tutor! Come up with questions, and evaluate answers.
+This application is a simple example of how AI can be used to tutor, come up with questions, and evaluate answers.
+
+There's also a terraform application to deploy this project to google cloud!  
+Each directory contains its own README.md file with its own documentation.
 
 
 ## Project Structure

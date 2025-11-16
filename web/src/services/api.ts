@@ -40,7 +40,7 @@ export interface EvaluationResult {
 
 export const chartApi = {
   async generateQuestion(): Promise<QuestionData> {
-    const response = await fetch(`${API_BASE_URL}/api/charts/generate-question/`, {
+    const response = await fetch(`${API_BASE_URL}/api/tutor/generate-question/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -57,7 +57,7 @@ export const chartApi = {
     studentSolution: ChartPoint[],
     correctAnswer: QuestionData['correctAnswer']
   ): Promise<EvaluationResult> {
-    const response = await fetch(`${API_BASE_URL}/api/charts/evaluate/`, {
+    const response = await fetch(`${API_BASE_URL}/api/tutor/evaluate/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

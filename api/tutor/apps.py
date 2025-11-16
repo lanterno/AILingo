@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class ChartsConfig(AppConfig):
-    name = "charts"
-    verbose_name = "Charts"
+class TutorConfig(AppConfig):
+    name = "tutor"
+    verbose_name = "tutor"

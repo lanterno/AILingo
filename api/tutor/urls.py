@@ -1,4 +1,4 @@
-from charts.views import QuestionViewSet
+from tutor.views import QuestionViewSet
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
