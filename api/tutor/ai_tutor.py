@@ -1,10 +1,14 @@
-"""AI Tutor module for generating questions and evaluating solutions."""
+"""AI Tutor module for generating questions and evaluating solutions"""
 
 import json
+import logging
+
 from pathlib import Path
 from typing import Any
 
 from openai import OpenAI
+
+logger = logging.getLogger(__name__)
 
 
 class AITutor:
@@ -20,8 +24,7 @@ class AITutor:
 
     def __init__(self, api_key: str = None):
         self.client = OpenAI(api_key=api_key)
-        self.model = "gpt-4o-mini"
-        self.temperature = 0.7
+        self.model = "gpt-5-mini"
 
     def _load_prompt(self, filename: str) -> str:
         """Load a prompt template from a file."""
@@ -41,6 +44,7 @@ class AITutor:
             json.JSONDecodeError: If the AI response cannot be parsed as JSON.
             Exception: For other errors during question generation.
         """
+        logger.info("Generating a new question")
         prompt = self._load_prompt("generate_question.txt")
 
         response = self.client.chat.completions.create(
@@ -52,7 +56,6 @@ class AITutor:
                 },
                 {"role": "user", "content": prompt},
             ],
-            temperature=self.temperature,
         )
 
         content = response.choices[0].message.content.strip()
@@ -62,6 +65,7 @@ class AITutor:
         except json.JSONDecodeError as e:
             raise ValueError(f"Invalid JSON response from AI: {content}") from e
 
+        logger.info("Finished generating question")
         return question_as_json
 
     def evaluate_answer(
@@ -104,20 +108,20 @@ class AITutor:
         # 4. The evaluation prompt template
         # 5. The student's answer (inserted into the template)
         full_prompt = f"""{generate_prompt}
+            ---
 
----
+            The question that was generated (in JSON format):
+            {json.dumps(original_question, indent=2)}
 
-The question that was generated (in JSON format):
-{json.dumps(original_question, indent=2)}
+            ---
 
----
+            The question text for the student:
+            {question}
 
-The question text for the student:
-{question}
+            ---
 
----
-
-{evaluate_prompt_template.format(student_answer=student_answer_json)}"""
+            {evaluate_prompt_template.format(student_answer=student_answer_json)}
+        """
 
         feedback_response = self.client.chat.completions.create(
             model=self.model,
@@ -128,7 +132,6 @@ The question text for the student:
                 },
                 {"role": "user", "content": full_prompt},
             ],
-            temperature=self.temperature,
         )
 
         content = feedback_response.choices[0].message.content.strip()

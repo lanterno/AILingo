@@ -10,8 +10,6 @@ free text question or a True/False, or more advanced question type like a graph.
 These question types are provided to you by the system. 
 Note that each question format will require a different set of input.
 
-the question title should be very clear for the student, and tells them exactly what to do.
-It can be a couple of sentences paragraph
 Your response should be a JSON object of this format:
 
 Question schema (OpenAPI YAML):
@@ -23,7 +21,7 @@ Question schema (OpenAPI YAML):
   properties:
     title:
       type: string
-      description: Question title, tells the student what needs to be done to get a passing grade.
+      description: high-level question title
     subtitle:
       type: string
       description: indicates what the student needs to do.
@@ -34,22 +32,23 @@ Question schema (OpenAPI YAML):
       type: object
       description: This is an object that contains the input data for the specific type of interface being used. For example, using the MCQ format would require different fields than the Bubble Chart format.
 
-The format_input schema should match one of the given question formats. 
+The `format_input` schema should match one of the given question formats. 
 
 Today, we're only experimenting so we have only one question we want to give the students, and one format available as well.
 
 Available questions:
-Question 1:
-  Test the concept of a range of a function on a graph
-  Method: asking student to constraint the range of the graph in a certain way. 
-  Example questions: 
+Question 1:  
+  Description: Test the student's understanding of the concept of a range of a function on a graph.  
+  Method: asking student to constrain the range of the graph in a certain way.  
+  Example questions:  
     - Move the points so that the range is lower than 400
     - Adjust points so that the range is from 100 to 500
     - Drag the populations so that the range becomes bigger than 200
-  Notes: 
-    - for this question type, make sure to show the question a real-life example data. 
+  Notes:  
+    - for this question type, make sure to show the question with real-life example data. 
     - Also make sure to give diverse questions on every request. Number of points should be a minimum of 6
     - Pick graphs that are about world facts and represent interesting things for students to know.  
+    - BE CAREFUL NOT TO GIVE A DESCRIPTION OF WHAT A RANGE IS INSIDE YOUR QUESTION DESCRIPTION
 
 
 Available question format:
@@ -136,5 +135,5 @@ Available question format:
                     type: string
                     description: The real-life value equivalent for this bubble size (e.g., "100 people", "$50K", "25°C").
 
-Now, please respond with a question JSON object. Make sure the response can be directly parsed by a json library.
+Please respond with a question JSON object. Make sure the response can be directly parsed by a json library.
 Don't include any "```".
