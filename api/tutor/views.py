@@ -1,6 +1,6 @@
 import os
 
-from rest_framework import status, viewsets
+from rest_framework import status, viewsets, serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -11,7 +11,16 @@ api_key = os.environ.get("OPENAI_API_KEY")
 ai_tutor = AITutor(api_key=api_key)
 
 
+class EmptySerializer(serializers.Serializer):
+    """
+    Placeholder serializer for the empty request body.
+    This allows us to test the API using the DRF UI
+    """
+
+
 class QuestionViewSet(viewsets.GenericViewSet):
+    serializer_class = EmptySerializer
+
     @action(detail=False, methods=["post"], url_path="generate-question")
     def generate_question(self, request):
         # ToDO: save the created question to DB
