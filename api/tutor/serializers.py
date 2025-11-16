@@ -28,8 +28,3 @@ class EvaluateAnswerSerializer(serializers.Serializer):
             "min_length": "Student solution must contain at least one point."
         },
     )
-
-    def validate_student_solution(self, value):
-        if not value:
-            raise serializers.ValidationError("Student solution cannot be empty.")
-        return value

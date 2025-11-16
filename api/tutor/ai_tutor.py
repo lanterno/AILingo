@@ -2,10 +2,8 @@
 
 import json
 import logging
-
 from pathlib import Path
 from typing import Any
-
 from openai import OpenAI
 
 logger = logging.getLogger(__name__)
@@ -27,7 +25,6 @@ class AITutor:
         self.model = "gpt-5-mini"
 
     def _load_prompt(self, filename: str) -> str:
-        """Load a prompt template from a file."""
         prompts_dir = Path(__file__).parent / "prompts"
         prompt_path = prompts_dir / filename
         with open(prompt_path, encoding="utf-8") as f:
@@ -94,11 +91,8 @@ class AITutor:
         if not student_solution:
             raise ValueError("Student solution cannot be empty")
 
-        # Load both prompts
         generate_prompt = self._load_prompt("generate_question.txt")
         evaluate_prompt_template = self._load_prompt("evaluate_solution.txt")
-
-        # Format the student answer as JSON string
         student_answer_json = json.dumps(student_solution, indent=2)
 
         # Construct the full evaluation prompt in the required order:
@@ -135,7 +129,6 @@ class AITutor:
         )
 
         content = feedback_response.choices[0].message.content.strip()
-
         evaluation_data = json.loads(content)
 
         return evaluation_data

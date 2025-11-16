@@ -55,11 +55,11 @@ export interface EvaluationResult {
 export function transformQuestionData(data: any): QuestionData {
   if (data.format_input) {
     const formatInput = data.format_input;
-    
+
     if (!formatInput.dataset || !Array.isArray(formatInput.dataset)) {
       throw new Error('Invalid API response: dataset is missing or not an array');
     }
-    
+
     let correctAnswer;
     if (formatInput.dataset.length > 0) {
       const initialYValues = formatInput.dataset.map((p: ChartPoint) => p.y);
@@ -68,7 +68,7 @@ export function transformQuestionData(data: any): QuestionData {
       const initialXValues = formatInput.dataset.map((p: ChartPoint) => p.x);
       const xMin = Math.min(...initialXValues);
       const xMax = Math.max(...initialXValues);
-      
+
       correctAnswer = {
         description: data.subtitle || data.title || 'Adjust the points to match the required range',
         expectedRange: { y: { min: yMin, max: yMax } },
@@ -80,7 +80,7 @@ export function transformQuestionData(data: any): QuestionData {
         expectedRange: { y: { min: 0, max: 0 } },
       };
     }
-    
+
     return {
       title: data.title || '',
       subtitle: data.subtitle,
@@ -91,14 +91,11 @@ export function transformQuestionData(data: any): QuestionData {
       yAxisLabel: formatInput.yAxisLabel || 'Y Axis',
       xAxisValues: formatInput.xAxisValues,
       yAxisValues: formatInput.yAxisValues,
-      legend: formatInput.legend || {
-        title: 'Size',
-        items: [],
-      },
+      legend: formatInput.legend || { title: 'Size', items: [] },
       correctAnswer,
     };
   }
-  
+
   return {
     title: data.title || '',
     subtitle: data.subtitle,
@@ -109,10 +106,7 @@ export function transformQuestionData(data: any): QuestionData {
     yAxisLabel: data.yAxisLabel || 'Y Axis',
     xAxisValues: data.xAxisValues,
     yAxisValues: data.yAxisValues,
-    legend: data.legend || {
-      title: 'Size',
-      items: [],
-    },
+    legend: data.legend || { title: 'Size', items: [] },
     correctAnswer: data.correctAnswer || {
       description: '',
       expectedRange: { y: { min: 0, max: 0 } },
@@ -133,11 +127,6 @@ export const chartApi = {
     }
     const responseData = await response.json();
     const data = responseData.question || responseData;
-    
-    if (data.format && data.format !== 'Bubble Chart') {
-      console.warn(`Unexpected question format: ${data.format}. Expected "Bubble Chart"`);
-    }
-    
     return transformQuestionData(data);
   },
 
@@ -149,14 +138,14 @@ export const chartApi = {
     if (studentSolution.length === 0) {
       throw new Error('Student solution cannot be empty');
     }
-    
+
     const xValues = studentSolution.map(p => p.x);
     const yValues = studentSolution.map(p => p.y);
     const xMin = Math.min(...xValues);
     const xMax = Math.max(...xValues);
     const yMin = Math.min(...yValues);
     const yMax = Math.max(...yValues);
-    
+
     const domain = {
       x: {
         min: xMin,
@@ -187,7 +176,7 @@ export const chartApi = {
       throw new Error('Failed to evaluate solution');
     }
     const apiResult = await response.json();
-    
+
     return {
       correct: apiResult.correct,
       feedback: apiResult.feedback,

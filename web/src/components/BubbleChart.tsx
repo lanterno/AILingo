@@ -140,7 +140,6 @@ const BubbleChart: React.FC = () => {
     ],
   };
 
-  // Calculate fixed axis bounds from initial dataset
   const axisBounds = React.useMemo(() => {
     if (initialPoints.length === 0) {
       return { xMin: 0, xMax: 100, yMin: 0, yMax: 100 };
@@ -153,7 +152,6 @@ const BubbleChart: React.FC = () => {
     const yMin = Math.min(...yValues);
     const yMax = Math.max(...yValues);
 
-    // Add padding (10% of range) to prevent bubbles from touching edges
     const xRange = xMax - xMin;
     const yRange = yMax - yMin;
     const xPadding = xRange * 0.1 || 10;
