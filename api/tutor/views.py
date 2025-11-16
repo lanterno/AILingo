@@ -1,21 +1,15 @@
 import os
 
-from rest_framework import status, viewsets, serializers
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from .ai_tutor import AITutor
+from .serializers import EmptySerializer, EvaluateAnswerSerializer
 
 # Initialize AI Tutor instance
 api_key = os.environ.get("OPENAI_API_KEY")
 ai_tutor = AITutor(api_key=api_key)
-
-
-class EmptySerializer(serializers.Serializer):
-    """
-    Placeholder serializer for the empty request body.
-    This allows us to test the API using the DRF UI
-    """
 
 
 class QuestionViewSet(viewsets.GenericViewSet):
@@ -30,12 +24,18 @@ class QuestionViewSet(viewsets.GenericViewSet):
 
     @action(detail=False, methods=["post"], url_path="evaluate")
     def evaluate_answer(self, request):
-        # ToDo: Retrieve the question from the database
-        question = request.data.get("question", "")
-        answer = request.data.get("answer", [])
+        serializer = EvaluateAnswerSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        validated_data = serializer.validated_data
+        question = validated_data["question"]
+        original_question = validated_data["original_question"]
+        student_solution = validated_data["student_solution"]
 
         evaluation_result = ai_tutor.evaluate_answer(
-            question=question, student_answer=answer
+            question=question,
+            original_question=original_question,
+            student_solution=student_solution,
         )
 
         return Response(evaluation_result, status=status.HTTP_200_OK)
