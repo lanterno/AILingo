@@ -13,10 +13,6 @@ terraform {
       source  = "hashicorp/time"
       version = "~> 0.9"
     }
-    null = {
-      source  = "hashicorp/null"
-      version = "~> 3.2"
-    }
   }
 }
 
@@ -43,12 +39,6 @@ resource "google_project_service" "artifactregistry" {
   disable_on_destroy = false
 }
 
-resource "google_project_service" "servicenetworking" {
-  project            = var.project_id
-  service            = "servicenetworking.googleapis.com"
-  disable_on_destroy = false
-}
-
 # Create Artifact Registry repository for Docker images
 resource "google_artifact_registry_repository" "docker_repo" {
   location      = var.region
@@ -67,8 +57,7 @@ resource "google_artifact_registry_repository" "docker_repo" {
 resource "time_sleep" "wait_for_apis" {
   depends_on = [
     google_project_service.cloudrun,
-    google_project_service.artifactregistry,
-    google_project_service.servicenetworking
+    google_project_service.artifactregistry
   ]
   create_duration = "60s"
 }
@@ -158,12 +147,21 @@ resource "google_project_service" "firebasehosting" {
   disable_on_destroy = false
 }
 
-# Firebase Hosting site
+# Firebase Hosting site (using default site - project ID)
+# The default site is automatically created by Firebase, we just manage it with Terraform
 resource "google_firebase_hosting_site" "web" {
   provider   = google-beta
   project    = var.project_id
-  site_id    = "${var.project_id}-ailingo-web"
+  site_id    = var.project_id
   depends_on = [google_project_service.firebasehosting]
+}
+
+# Grant Firebase Hosting Admin role to GitHub Actions service account
+resource "google_project_iam_member" "github_actions_firebase_hosting" {
+  project = var.project_id
+  role    = "roles/firebasehosting.admin"
+  member  = "serviceAccount:github-actions@${var.project_id}.iam.gserviceaccount.com"
+  depends_on = [google_firebase_hosting_site.web]
 }
 
 # IAM policy to allow unauthenticated access
@@ -180,6 +178,15 @@ resource "google_project_service" "cloudresourcemanager" {
   project            = var.project_id
   service            = "cloudresourcemanager.googleapis.com"
   disable_on_destroy = false
+}
+
+# Wait for Cloud Run service to be ready before creating domain mapping
+resource "time_sleep" "wait_for_service_ready" {
+  depends_on = [google_cloud_run_service.api]
+  create_duration = "30s"
+  
+  # This gives the service time to become ready
+  # Note: If the service is failing to start, this won't help - fix the container issue first
 }
 
 # Cloud Run domain mapping for API
@@ -200,8 +207,10 @@ resource "google_cloud_run_domain_mapping" "api_domain" {
 
   depends_on = [
     google_cloud_run_service.api,
-    google_project_service.cloudresourcemanager
+    google_project_service.cloudresourcemanager,
+    time_sleep.wait_for_service_ready
   ]
+
 }
 
 # Firebase Hosting custom domain

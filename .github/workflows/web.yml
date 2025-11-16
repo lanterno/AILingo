@@ -74,10 +74,6 @@ jobs:
       - name: Deploy to Firebase Hosting
         working-directory: ./web
         run: |
-          SITE_ID="${{ env.GCP_PROJECT_ID }}-ailingo-web"
           firebase deploy --only hosting \
             --project ${{ env.GCP_PROJECT_ID }} \
-            --non-interactive \
-            || firebase deploy --only hosting:$SITE_ID \
-                --project ${{ env.GCP_PROJECT_ID }} \
-                --non-interactive
+            --non-interactive
