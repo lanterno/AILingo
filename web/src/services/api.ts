@@ -144,7 +144,7 @@ export const chartApi = {
   async evaluateSolution(
     question: string,
     studentSolution: ChartPoint[],
-    correctAnswer: QuestionData['correctAnswer']
+    originalQuestion: QuestionData
   ): Promise<EvaluationResult> {
     if (studentSolution.length === 0) {
       throw new Error('Student solution cannot be empty');
@@ -179,10 +179,8 @@ export const chartApi = {
       },
       body: JSON.stringify({
         question,
-        answer: {
-          studentSolution,
-          correctAnswer,
-        },
+        original_question: originalQuestion,
+        student_solution: studentSolution,
       }),
     });
     if (!response.ok) {

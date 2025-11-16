@@ -21,9 +21,12 @@ const STORAGE_KEY = 'ailingo-question-data';
 const BubbleChart: React.FC = () => {
   const [questionData, setQuestionData] = useState<QuestionData | null>(null);
   const [points, setPoints] = useState<ChartPoint[]>([]);
+  const [initialPoints, setInitialPoints] = useState<ChartPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [evaluation, setEvaluation] = useState<EvaluationResult | null>(null);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [closeButtonHover, setCloseButtonHover] = useState(false);
   const [isCelebrating, setIsCelebrating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const chartRef = useRef<ChartJS<'bubble', ChartPoint[]>>(null);
@@ -38,14 +41,18 @@ const BubbleChart: React.FC = () => {
         const parsed = JSON.parse(stored);
         const questionData = transformQuestionData(parsed);
         setQuestionData(questionData);
-        setPoints(questionData.dataset || []);
+        const dataset = questionData.dataset || [];
+        setPoints(dataset);
+        setInitialPoints(dataset);
         setLoading(false);
         return;
       }
 
       const newQuestion = await chartApi.generateQuestion();
+      const dataset = newQuestion.dataset || [];
       setQuestionData(newQuestion);
-      setPoints(newQuestion.dataset || []);
+      setPoints(dataset);
+      setInitialPoints(dataset);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newQuestion));
       setLoading(false);
     } catch (err) {
@@ -59,11 +66,14 @@ const BubbleChart: React.FC = () => {
       setLoading(true);
       setError(null);
       setEvaluation(null);
+      setShowFeedback(false);
       setIsCelebrating(false);
       
       const newQuestion = await chartApi.generateQuestion();
+      const dataset = newQuestion.dataset || [];
       setQuestionData(newQuestion);
-      setPoints(newQuestion.dataset || []);
+      setPoints(dataset);
+      setInitialPoints(dataset);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newQuestion));
       setLoading(false);
     } catch (err) {
@@ -97,10 +107,11 @@ const BubbleChart: React.FC = () => {
       const result = await chartApi.evaluateSolution(
         questionText,
         points,
-        questionData.correctAnswer
+        questionData
       );
       
       setEvaluation(result);
+      setShowFeedback(true);
       
       if (result.correct) {
         setIsCelebrating(true);
@@ -129,19 +140,48 @@ const BubbleChart: React.FC = () => {
     ],
   };
 
+  // Calculate fixed axis bounds from initial dataset
+  const axisBounds = React.useMemo(() => {
+    if (initialPoints.length === 0) {
+      return { xMin: 0, xMax: 100, yMin: 0, yMax: 100 };
+    }
+
+    const xValues = initialPoints.map((p) => p.x);
+    const yValues = initialPoints.map((p) => p.y);
+    const xMin = Math.min(...xValues);
+    const xMax = Math.max(...xValues);
+    const yMin = Math.min(...yValues);
+    const yMax = Math.max(...yValues);
+
+    // Add padding (10% of range) to prevent bubbles from touching edges
+    const xRange = xMax - xMin;
+    const yRange = yMax - yMin;
+    const xPadding = xRange * 0.1 || 10;
+    const yPadding = yRange * 0.1 || 10;
+
+    return {
+      xMin: xMin - xPadding,
+      xMax: xMax + xPadding,
+      yMin: yMin - yPadding,
+      yMax: yMax + yPadding,
+    };
+  }, [initialPoints]);
+
   const options = {
     responsive: true,
-    maintainAspectRatio: true,
+    maintainAspectRatio: false,
     scales: {
       x: {
-        beginAtZero: true,
+        min: axisBounds.xMin,
+        max: axisBounds.xMax,
         title: {
           display: true,
           text: questionData?.xAxisLabel || 'X Axis',
         },
       },
       y: {
-        beginAtZero: true,
+        min: axisBounds.yMin,
+        max: axisBounds.yMax,
         title: {
           display: true,
           text: questionData?.yAxisLabel || 'Y Axis',
@@ -215,7 +255,6 @@ const BubbleChart: React.FC = () => {
       )}
       <div style={styles.card}>
         <div style={styles.header}>
-          <h1 style={styles.title}>AILingo AI Tutor</h1>
           <button onClick={generateNewQuestion} style={styles.refreshButton}>
             🔄 New Question
           </button>
@@ -227,15 +266,19 @@ const BubbleChart: React.FC = () => {
             {questionData.subtitle && (
               <p style={styles.subtitle}>{questionData.subtitle}</p>
             )}
-            {questionData.graphTitle && (
-              <h3 style={styles.graphTitle}>{questionData.graphTitle}</h3>
-            )}
           </>
         )}
 
         <div style={styles.chartWrapper}>
           <div style={styles.chartContainer}>
-            <Bubble ref={chartRef} data={chartData} options={options} />
+            {questionData?.graphTitle && (
+              <div style={styles.graphTitleContainer}>
+                <h3 style={styles.graphTitle}>{questionData.graphTitle}</h3>
+              </div>
+            )}
+            <div style={styles.chartArea}>
+              <Bubble ref={chartRef} data={chartData} options={options} />
+            </div>
           </div>
           {questionData?.legend && questionData.legend.items.length > 0 && (
             <div style={styles.sizeLegend}>
@@ -272,24 +315,36 @@ const BubbleChart: React.FC = () => {
           </button>
         </div>
 
-        {evaluation && (
+        {evaluation && showFeedback && (
           <div
             style={{
               ...styles.feedbackBox,
               ...(evaluation.correct ? styles.feedbackBoxCorrect : styles.feedbackBoxIncorrect),
             }}
           >
-            <h3 style={styles.feedbackTitle}>
+            <button
+              onClick={() => setShowFeedback(false)}
+              onMouseEnter={() => setCloseButtonHover(true)}
+              onMouseLeave={() => setCloseButtonHover(false)}
+              style={{
+                ...styles.closeButton,
+                ...(closeButtonHover ? styles.closeButtonHover : {}),
+              }}
+              aria-label="Close feedback"
+            >
+              ×
+            </button>
+            <h3 style={{...styles.feedbackTitle, paddingRight: '30px'}}>
               {evaluation.correct ? '✓ Correct!' : '✗ Not Quite Right'}
             </h3>
             <p style={styles.feedbackText}>{evaluation.feedback}</p>
             <div style={styles.rangesInfo}>
               <p>
-                <strong>Domain (X-axis):</strong> {evaluation.domain.x.min.toFixed(2)} -{' '}
+                <strong>Domain:</strong> {evaluation.domain.x.min.toFixed(2)} -{' '}
                 {evaluation.domain.x.max.toFixed(2)} (Span: {evaluation.domain.x.span.toFixed(2)})
               </p>
               <p>
-                <strong>Range (Y-axis):</strong> {evaluation.range.y.min.toFixed(2)} -{' '}
+                <strong>Range:</strong> {evaluation.range.y.min.toFixed(2)} -{' '}
                 {evaluation.range.y.max.toFixed(2)} (Range: {evaluation.range.y.range.toFixed(2)})
               </p>
             </div>
@@ -310,9 +365,9 @@ const styles: { [key: string]: React.CSSProperties } = {
   container: {
     minHeight: '100vh',
     display: 'flex',
-    alignItems: 'flex-start',
+    alignItems: 'stretch',
     justifyContent: 'center',
-    padding: '15px',
+    padding: '10px',
     position: 'relative',
   },
   celebration: {
@@ -343,22 +398,21 @@ const styles: { [key: string]: React.CSSProperties } = {
   card: {
     background: 'white',
     borderRadius: '12px',
-    padding: '20px',
+    padding: '16px',
     boxShadow: '0 10px 30px rgba(0, 0, 0, 0.2)',
-    maxWidth: '1000px',
+    maxWidth: '1200px',
     width: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    height: 'calc(100vh - 20px)',
+    maxHeight: 'calc(100vh - 20px)',
   },
   header: {
     display: 'flex',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     alignItems: 'center',
-    marginBottom: '12px',
-  },
-  title: {
-    fontSize: '1.5rem',
-    fontWeight: 'bold',
-    color: '#1f2937',
-    margin: 0,
+    marginBottom: '8px',
+    flexShrink: 0,
   },
   refreshButton: {
     padding: '6px 12px',
@@ -371,38 +425,56 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontWeight: '600',
   },
   questionTitleMain: {
-    fontSize: '1.3rem',
+    fontSize: '1.2rem',
     fontWeight: '600',
     color: '#1f2937',
-    marginBottom: '8px',
+    marginBottom: '6px',
     marginTop: 0,
     lineHeight: '1.4',
+    flexShrink: 0,
   },
   subtitle: {
-    fontSize: '1rem',
+    fontSize: '0.95rem',
     color: '#4b5563',
     lineHeight: '1.5',
-    marginBottom: '12px',
-    marginTop: 0,
-  },
-  graphTitle: {
-    fontSize: '1rem',
-    fontWeight: '500',
-    color: '#6b7280',
     marginBottom: '10px',
     marginTop: 0,
-    fontStyle: 'italic',
+    flexShrink: 0,
+  },
+  graphTitleContainer: {
+    marginBottom: '8px',
+    paddingBottom: '8px',
+    borderBottom: '1px solid #e5e7eb',
+  },
+  graphTitle: {
+    fontSize: '0.9rem',
+    fontWeight: '600',
+    color: '#4b5563',
+    margin: 0,
+    textAlign: 'center',
   },
   chartWrapper: {
     display: 'flex',
-    gap: '15px',
-    alignItems: 'flex-start',
+    gap: '12px',
+    alignItems: 'stretch',
+    flex: 1,
+    minHeight: 0,
   },
   chartContainer: {
     position: 'relative',
-    height: '400px',
     flex: 1,
-    marginBottom: '15px',
+    backgroundColor: 'white',
+    borderRadius: '8px',
+    border: '1px solid #e5e7eb',
+    padding: '10px',
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: 0,
+  },
+  chartArea: {
+    position: 'relative',
+    flex: 1,
+    minHeight: 0,
   },
   sizeLegend: {
     minWidth: '120px',
@@ -435,7 +507,8 @@ const styles: { [key: string]: React.CSSProperties } = {
   actions: {
     display: 'flex',
     justifyContent: 'center',
-    marginTop: '15px',
+    marginTop: '12px',
+    flexShrink: 0,
   },
   submitButton: {
     padding: '10px 24px',
@@ -453,12 +526,38 @@ const styles: { [key: string]: React.CSSProperties } = {
     cursor: 'not-allowed',
   },
   feedbackBox: {
-    marginTop: '20px',
-    padding: '16px',
+    marginTop: '12px',
+    padding: '12px',
     borderRadius: '8px',
     border: '2px solid',
-    maxHeight: '400px',
+    maxHeight: '200px',
     overflowY: 'auto',
+    flexShrink: 0,
+    position: 'relative',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: '8px',
+    right: '8px',
+    background: 'transparent',
+    border: 'none',
+    fontSize: '24px',
+    lineHeight: '1',
+    cursor: 'pointer',
+    color: '#6b7280',
+    padding: '0',
+    width: '28px',
+    height: '28px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: '4px',
+    transition: 'background-color 0.2s, color 0.2s',
+    fontWeight: '300',
+  },
+  closeButtonHover: {
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+    color: '#1f2937',
   },
   feedbackBoxCorrect: {
     backgroundColor: '#d1fae5',
