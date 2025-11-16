@@ -67,33 +67,57 @@ class AITutor:
     def evaluate_answer(
         self,
         question: str,
-        student_answer: dict,
+        original_question: dict[str, Any],
+        student_solution: list[dict[str, Any]],
     ) -> dict[str, Any]:
         """
         Evaluate a student's answer and provide feedback.
 
         Args:
-            question: The original question text.
-            student_solution: List of points with x, y coordinates.
+            question: The question text (subtitle or title).
+            original_question: The full original question data that was generated.
+            student_solution: List of points with x, y, r, color coordinates.
 
         Returns:
             Dictionary containing:
                 - correct: Boolean indicating if solution is correct
                 - feedback: AI-generated feedback message
-                - domain: Calculated domain (X-axis) values
-                - range: Calculated range (Y-axis) values
 
         Raises:
             ValueError: If student_solution is empty.
             Exception: For other errors during evaluation.
         """
+        if not student_solution:
+            raise ValueError("Student solution cannot be empty")
 
-        # Let AI determine correctness - provide context but don't pre-judge
-        feedback_template = self._load_prompt("evaluate_solution.txt")
-        feedback_prompt = feedback_template.format(
-            question=question,
-            expected_description=student_answer,
-        )
+        # Load both prompts
+        generate_prompt = self._load_prompt("generate_question.txt")
+        evaluate_prompt_template = self._load_prompt("evaluate_solution.txt")
+
+        # Format the student answer as JSON string
+        student_answer_json = json.dumps(student_solution, indent=2)
+
+        # Construct the full evaluation prompt in the required order:
+        # 1. The question generation prompt (reconstructed)
+        # 2. The actual question that was generated
+        # 3. The question text
+        # 4. The evaluation prompt template
+        # 5. The student's answer (inserted into the template)
+        full_prompt = f"""{generate_prompt}
+
+---
+
+The question that was generated (in JSON format):
+{json.dumps(original_question, indent=2)}
+
+---
+
+The question text for the student:
+{question}
+
+---
+
+{evaluate_prompt_template.format(student_answer=student_answer_json)}"""
 
         feedback_response = self.client.chat.completions.create(
             model=self.model,
@@ -102,7 +126,7 @@ class AITutor:
                     "role": "system",
                     "content": "You are a supportive, encouraging tutor. Always respond with valid JSON only.",
                 },
-                {"role": "user", "content": feedback_prompt},
+                {"role": "user", "content": full_prompt},
             ],
             temperature=self.temperature,
         )
