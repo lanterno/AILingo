@@ -56,3 +56,4 @@ terraform.tfvars
 .DS_Store
 Thumbs.db
 
+.firebase*
