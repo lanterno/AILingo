@@ -24,7 +24,5 @@ class EvaluateAnswerSerializer(serializers.Serializer):
         child=ChartPointSerializer(),
         required=True,
         min_length=1,
-        error_messages={
-            "min_length": "Student solution must contain at least one point."
-        },
+        error_messages={"min_length": "Student solution must contain at least one point."},
     )

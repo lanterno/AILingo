@@ -4,6 +4,7 @@ import json
 import logging
 from pathlib import Path
 from typing import Any
+
 from openai import OpenAI
 
 logger = logging.getLogger(__name__)
