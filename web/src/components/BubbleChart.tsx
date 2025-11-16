@@ -7,7 +7,7 @@ import {
 } from 'chart.js';
 import { Bubble } from 'react-chartjs-2';
 import dragDataPlugin from 'chartjs-plugin-dragdata';
-import { chartApi, ChartPoint, QuestionData, EvaluationResult } from '../services/api';
+import { chartApi, transformQuestionData, type ChartPoint, type QuestionData, type EvaluationResult } from '../services/api';
 
 ChartJS.register(
   LinearScale,
@@ -33,20 +33,19 @@ const BubbleChart: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      // Try to load from localStorage first
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        setQuestionData(parsed);
-        setPoints(parsed.dataset);
+        const questionData = transformQuestionData(parsed);
+        setQuestionData(questionData);
+        setPoints(questionData.dataset || []);
         setLoading(false);
         return;
       }
 
-      // Generate new question if none exists
       const newQuestion = await chartApi.generateQuestion();
       setQuestionData(newQuestion);
-      setPoints(newQuestion.dataset);
+      setPoints(newQuestion.dataset || []);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newQuestion));
       setLoading(false);
     } catch (err) {
@@ -64,7 +63,7 @@ const BubbleChart: React.FC = () => {
       
       const newQuestion = await chartApi.generateQuestion();
       setQuestionData(newQuestion);
-      setPoints(newQuestion.dataset);
+      setPoints(newQuestion.dataset || []);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newQuestion));
       setLoading(false);
     } catch (err) {
@@ -79,7 +78,6 @@ const BubbleChart: React.FC = () => {
 
   const handleDragEnd = useCallback(
     (_event: any, _datasetIndex: number, index: number, value: any) => {
-      // Update local state immediately for smooth dragging
       setPoints((prev) =>
         prev.map((p, idx) =>
           idx === index ? { ...p, x: value.x, y: value.y } : p
@@ -95,8 +93,9 @@ const BubbleChart: React.FC = () => {
     try {
       setIsSubmitting(true);
       setError(null);
+      const questionText = questionData.subtitle || questionData.title || questionData.question;
       const result = await chartApi.evaluateSolution(
-        questionData.question,
+        questionText,
         points,
         questionData.correctAnswer
       );
@@ -113,19 +112,6 @@ const BubbleChart: React.FC = () => {
       setIsSubmitting(false);
     }
   }, [questionData, points]);
-
-  // Get unique radius values for the legend - show only 3 sizes (min, middle, max)
-  const uniqueRadii = React.useMemo(() => {
-    const radii = [...new Set(points.map((p) => p.r))].sort((a, b) => a - b);
-    if (radii.length === 0) return [];
-    if (radii.length === 1) return [radii[0]];
-    if (radii.length === 2) return [radii[0], radii[1]];
-    const min = radii[0];
-    const max = radii[radii.length - 1];
-    const middleIndex = Math.floor(radii.length / 2);
-    const middle = radii[middleIndex];
-    return [min, middle, max];
-  }, [points]);
 
   const chartData = {
     datasets: [
@@ -171,7 +157,7 @@ const BubbleChart: React.FC = () => {
           label: (context: any) => {
             const point = points[context.dataIndex];
             return [
-              point.label || `Point ${context.dataIndex + 1}`,
+              point.title || point.label || `Point ${context.dataIndex + 1}`,
               `X: ${point.x.toFixed(2)}`,
               `Y: ${point.y.toFixed(2)}`,
               `Radius: ${point.r.toFixed(2)}`,
@@ -237,11 +223,13 @@ const BubbleChart: React.FC = () => {
         
         {questionData && (
           <>
-            <h2 style={styles.graphTitle}>{questionData.title}</h2>
-            <div style={styles.questionBox}>
-              <h3 style={styles.questionTitle}>Question:</h3>
-              <p style={styles.questionText}>{questionData.question}</p>
-            </div>
+            <h2 style={styles.questionTitleMain}>{questionData.title}</h2>
+            {questionData.subtitle && (
+              <p style={styles.subtitle}>{questionData.subtitle}</p>
+            )}
+            {questionData.graphTitle && (
+              <h3 style={styles.graphTitle}>{questionData.graphTitle}</h3>
+            )}
           </>
         )}
 
@@ -249,22 +237,22 @@ const BubbleChart: React.FC = () => {
           <div style={styles.chartContainer}>
             <Bubble ref={chartRef} data={chartData} options={options} />
           </div>
-          {uniqueRadii.length > 0 && (
+          {questionData?.legend && questionData.legend.items.length > 0 && (
             <div style={styles.sizeLegend}>
-              <h3 style={styles.legendTitle}>Size</h3>
-              {uniqueRadii.map((radius, index) => (
+              <h3 style={styles.legendTitle}>{questionData.legend.title}</h3>
+              {questionData.legend.items.map((item, index) => (
                 <div key={index} style={styles.legendItem}>
                   <div
                     style={{
                       ...styles.legendBubble,
-                      width: `${Math.max(radius * 2, 20)}px`,
-                      height: `${Math.max(radius * 2, 20)}px`,
+                      width: `${Math.max(item.size * 2, 20)}px`,
+                      height: `${Math.max(item.size * 2, 20)}px`,
                       borderRadius: '50%',
                       backgroundColor: 'transparent',
                       border: '2px solid #374151',
                     }}
                   />
-                  <span style={styles.legendLabel}>{radius.toFixed(0)}</span>
+                  <span style={styles.legendLabel}>{item.label}</span>
                 </div>
               ))}
             </div>
@@ -382,30 +370,28 @@ const styles: { [key: string]: React.CSSProperties } = {
     cursor: 'pointer',
     fontWeight: '600',
   },
-  questionBox: {
-    backgroundColor: '#f3f4f6',
-    padding: '12px',
-    borderRadius: '8px',
-    marginBottom: '15px',
-  },
-  questionTitle: {
-    fontSize: '0.9rem',
+  questionTitleMain: {
+    fontSize: '1.3rem',
     fontWeight: '600',
     color: '#1f2937',
-    marginBottom: '6px',
+    marginBottom: '8px',
+    marginTop: 0,
+    lineHeight: '1.4',
   },
-  questionText: {
-    fontSize: '0.9rem',
+  subtitle: {
+    fontSize: '1rem',
     color: '#4b5563',
     lineHeight: '1.5',
-    margin: 0,
+    marginBottom: '12px',
+    marginTop: 0,
   },
   graphTitle: {
-    fontSize: '1.1rem',
-    fontWeight: '600',
-    color: '#1f2937',
+    fontSize: '1rem',
+    fontWeight: '500',
+    color: '#6b7280',
     marginBottom: '10px',
     marginTop: 0,
+    fontStyle: 'italic',
   },
   chartWrapper: {
     display: 'flex',
