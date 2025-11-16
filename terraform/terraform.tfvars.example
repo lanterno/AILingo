@@ -1,11 +1,36 @@
 # Example terraform.tfvars
-# Copy this file and fill in your values
+# Copy this file to terraform.tfvars and fill in your values
+# DO NOT commit terraform.tfvars to version control (it contains sensitive data)
 
-project_id  = "ailingo-478020"
-region      = "europe-west1"
-secret_key  = "!@#DFGDFG#$%$#%#$%HFGDH$%^"
+# Required: GCP Project ID
+project_id = "your-gcp-project-id"
 
-# After building and pushing API image to Artifact Registry via GitHub Actions:
-# The image will be automatically pushed to: REGION-docker.pkg.dev/PROJECT_ID/ailingo-api/ailingo-api:latest
+# Required: GCP Region (default: us-central1)
+region = "europe-west1"
+
+# Required: Django secret key (sensitive)
+# Generate a secure key: python -c "import secrets; print(secrets.token_urlsafe(50))"
+secret_key = "your-django-secret-key-here"
+
+# Required: OpenAI API key (sensitive)
+# Get your API key from: https://platform.openai.com/api-keys
+openai_api_key = "sk-your-openai-api-key-here"
+
+# Optional: Container image for API service
+# If not specified, Terraform will use: REGION-docker.pkg.dev/PROJECT_ID/ailingo-api/ailingo-api:latest
+# After building and pushing API image to Artifact Registry via GitHub Actions,
+# the image will be automatically available at the default path.
 # You can optionally specify a different image or tag:
 # api_image = "europe-west1-docker.pkg.dev/your-project-id/ailingo-api/ailingo-api:latest"
+
+# Custom Domains Configuration:
+# The Terraform configuration includes custom domain mappings:
+# - API: api.ailingo.elghareeb.space (Cloud Run)
+# - Web: ailingo.elghareeb.space (Firebase Hosting)
+# 
+# After running terraform apply, you'll need to:
+# 1. Check the outputs for DNS verification records:
+#    terraform output api_domain_verification_records
+#    terraform output web_domain_verification_records
+# 2. Add the DNS records to your domain provider
+# 3. Wait for domain verification and SSL certificate provisioning

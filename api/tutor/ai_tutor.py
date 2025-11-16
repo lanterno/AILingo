@@ -57,7 +57,12 @@ class AITutor:
 
         content = response.choices[0].message.content.strip()
 
-        return json.loads(content)
+        try:
+            question_as_json = json.loads(content)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON response from AI: {content}") from e
+
+        return question_as_json
 
     def evaluate_answer(
         self,

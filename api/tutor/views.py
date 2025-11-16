@@ -11,8 +11,8 @@ api_key = os.environ.get("OPENAI_API_KEY")
 ai_tutor = AITutor(api_key=api_key)
 
 
-class QuestionViewSet(viewsets.ViewSet):
-    @action(detail=False, methods=["post"], url_path="generate-new")
+class QuestionViewSet(viewsets.GenericViewSet):
+    @action(detail=False, methods=["post"], url_path="generate-question")
     def generate_question(self, request):
         # ToDO: save the created question to DB
         # Question: which db should the question be stored in?
@@ -25,6 +25,8 @@ class QuestionViewSet(viewsets.ViewSet):
         question = request.data.get("question", "")
         answer = request.data.get("answer", [])
 
-        evaluation_result = ai_tutor.evaluate_answer(question=question, student_answer=answer)
+        evaluation_result = ai_tutor.evaluate_answer(
+            question=question, student_answer=answer
+        )
 
         return Response(evaluation_result, status=status.HTTP_200_OK)

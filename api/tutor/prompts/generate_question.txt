@@ -76,4 +76,5 @@ Available question format:
                 type: array
                 description: ["Value1", "Value2", "Value3", ...],  // Optional: specific values for Y axis
 
-Now, please respond with a question JSON object.
+Now, please respond with a question JSON object. Make sure the response can be directly parsed by a json library.
+Don't include any "```".

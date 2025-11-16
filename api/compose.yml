@@ -7,7 +7,10 @@ services:
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - SECRET_KEY=${SECRET_KEY:-secret-key}
+    env_file:
+      - .env
     volumes:
       - .:/app
+    command: python manage.py runserver 0.0.0.0:8000
     restart: unless-stopped
 
