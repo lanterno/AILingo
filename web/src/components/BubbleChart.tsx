@@ -224,7 +224,7 @@ const BubbleChart: React.FC = () => {
 
   if (loading) {
     return (
-      <div style={styles.container}>
+      <div style={styles.loadingContainer}>
         <div style={styles.loading}>Loading question...</div>
       </div>
     );
@@ -341,11 +341,11 @@ const BubbleChart: React.FC = () => {
             <div style={styles.rangesInfo}>
               <p>
                 <strong>Domain:</strong> {evaluation.domain.x.min.toFixed(2)} -{' '}
-                {evaluation.domain.x.max.toFixed(2)} (Span: {evaluation.domain.x.span.toFixed(2)})
+                {evaluation.domain.x.max.toFixed(2)}
               </p>
               <p>
                 <strong>Range:</strong> {evaluation.range.y.min.toFixed(2)} -{' '}
-                {evaluation.range.y.max.toFixed(2)} (Range: {evaluation.range.y.range.toFixed(2)})
+                {evaluation.range.y.max.toFixed(2)}
               </p>
             </div>
           </div>
@@ -588,9 +588,21 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderRadius: '8px',
     color: '#991b1b',
   },
+  loadingContainer: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '100vh',
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   loading: {
     fontSize: '1.5rem',
-    color: 'white',
+    color: '#1f2937',
     textAlign: 'center',
   },
   error: {
