@@ -13,6 +13,11 @@ dependencies = [
     "uvicorn[standard]>=0.30.0",
 ]
 
+[dependency-groups]
+dev = [
+    "ruff>=0.14.5",
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -30,4 +35,3 @@ ignore = ["E501"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["api"]
-

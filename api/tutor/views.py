@@ -1,4 +1,5 @@
 import os
+
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -24,8 +25,6 @@ class QuestionViewSet(viewsets.ViewSet):
         question = request.data.get("question", "")
         answer = request.data.get("answer", [])
 
-        evaluation_result = ai_tutor.evaluate_answer(
-            question=question, student_answer=answer
-        )
+        evaluation_result = ai_tutor.evaluate_answer(question=question, student_answer=answer)
 
         return Response(evaluation_result, status=status.HTTP_200_OK)

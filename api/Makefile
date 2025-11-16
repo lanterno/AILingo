@@ -4,11 +4,11 @@ up:
 	docker compose up
 
 test:
-	pytest
+	uv run pytest
 
 format:
-	ruff check . --fix
-	ruff format
+	uv run ruff check . --fix
+	uv run ruff format
 	
 
 down:

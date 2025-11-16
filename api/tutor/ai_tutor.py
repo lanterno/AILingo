@@ -1,8 +1,6 @@
 """AI Tutor module for generating questions and evaluating solutions."""
 
 import json
-import os
-
 from pathlib import Path
 from typing import Any
 
