@@ -1,10 +1,10 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from charts.views import ChartViewSet
+from charts.views import QuestionViewSet
 
 router = DefaultRouter()
-router.register(r"", ChartViewSet, basename="chart")
+router.register(r"", QuestionViewSet, basename="chart")
 
 urlpatterns = [
     path("", include(router.urls)),
