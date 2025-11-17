@@ -38,8 +38,9 @@ Today, we're only experimenting so we have only one question we want to give the
 
 Available questions:
 Question 1:  
-  Description: Test the student's understanding of the concept of a range of a function on a graph.  
-  Method: asking student to constrain the range of the graph in a certain way.  
+  Description: Tests the student's understanding of the concept of a graph range (i.e. the values on the y-axis).
+  Method: asking student to constrain the range of the graph in a certain way, and see if they figure out that the y-axis
+    is the one to look for. 
   Example questions:  
     - Move the points so that the range is lower than 400
     - Adjust points so that the range is from 100 to 500
@@ -48,7 +49,8 @@ Question 1:
     - for this question type, make sure to show the question with real-life example data. 
     - Also make sure to give diverse questions on every request. Number of points should be a minimum of 6
     - Pick graphs that are about world facts and represent interesting things for students to know.  
-    - BE CAREFUL NOT TO GIVE A DESCRIPTION OF WHAT A RANGE IS INSIDE YOUR QUESTION DESCRIPTION
+    - BE CAREFUL NOT TO GIVE A DESCRIPTION OF WHAT A RANGE IS, INSIDE YOUR QUESTION DESCRIPTION.
+      for example, by mentioning that a range is the y-axis. 
 
 
 Available question format:
