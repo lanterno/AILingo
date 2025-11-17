@@ -29,11 +29,13 @@ const BubbleChart: React.FC = () => {
   const [closeButtonHover, setCloseButtonHover] = useState(false);
   const [isCelebrating, setIsCelebrating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loadingSeconds, setLoadingSeconds] = useState(0);
   const chartRef = useRef<ChartJS<'bubble', ChartPoint[]>>(null);
 
   const loadQuestion = useCallback(async () => {
     try {
       setLoading(true);
+      setLoadingSeconds(0);
       setError(null);
       
       const stored = localStorage.getItem(STORAGE_KEY);
@@ -64,6 +66,7 @@ const BubbleChart: React.FC = () => {
   const generateNewQuestion = useCallback(async () => {
     try {
       setLoading(true);
+      setLoadingSeconds(0);
       setError(null);
       setEvaluation(null);
       setShowFeedback(false);
@@ -85,6 +88,19 @@ const BubbleChart: React.FC = () => {
   useEffect(() => {
     loadQuestion();
   }, [loadQuestion]);
+
+  useEffect(() => {
+    if (!loading) {
+      setLoadingSeconds(0);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setLoadingSeconds((prev) => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [loading]);
 
   const handleDragEnd = useCallback(
     (_event: any, _datasetIndex: number, index: number, value: any) => {
@@ -223,7 +239,11 @@ const BubbleChart: React.FC = () => {
   if (loading) {
     return (
       <div style={styles.loadingContainer}>
-        <div style={styles.loading}>Loading question...</div>
+        <div style={styles.loading}>
+          <div>Loading question...</div>
+          <div style={styles.loadingCounter}>{loadingSeconds} seconds</div>
+          <div style={styles.loadingExpectedTime}>Expected time: 35 seconds</div>
+        </div>
       </div>
     );
   }
@@ -602,6 +622,19 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontSize: '1.5rem',
     color: '#1f2937',
     textAlign: 'center',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+  },
+  loadingCounter: {
+    fontSize: '2rem',
+    fontWeight: '600',
+    color: '#3B82F6',
+  },
+  loadingExpectedTime: {
+    fontSize: '1rem',
+    color: 'white',
+    marginTop: '4px',
   },
   error: {
     fontSize: '1.2rem',
