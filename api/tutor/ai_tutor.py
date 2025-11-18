@@ -2,6 +2,7 @@
 
 import json
 import logging
+import time
 from pathlib import Path
 from typing import Any
 
@@ -42,6 +43,7 @@ class AITutor:
             json.JSONDecodeError: If the AI response cannot be parsed as JSON.
             Exception: For other errors during question generation.
         """
+        start_time = time.perf_counter()
         logger.info("Generating a new question")
         prompt = self._load_prompt("generate_question.txt")
 
@@ -63,7 +65,8 @@ class AITutor:
         except json.JSONDecodeError as e:
             raise ValueError(f"Invalid JSON response from AI: {content}") from e
 
-        logger.info("Finished generating question")
+        elapsed_time = time.perf_counter() - start_time
+        logger.info("Finished generating question in %.2f seconds", elapsed_time)
         return question_as_json
 
     def evaluate_answer(
